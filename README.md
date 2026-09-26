@@ -10,7 +10,7 @@
 
 ## 🚀 Live Render Deployment
 
-- **Live Application URL**: [https://wanderlust-dwivedi.onrender.com](https://wanderlust-neb3.onrender.com/listings)
+- **Live Application URL**: [https://wanderlust-neb3.onrender.com](https://wanderlust-neb3.onrender.com/listings)
 - **GitHub Repository**: [https://github.com/dwivedianandnarayan7133/WanderLust](https://github.com/dwivedianandnarayan7133/WanderLust)
 
 ---
