@@ -16,10 +16,10 @@ const ExpressError = require("./utils/ExpressError.js")
 const listingSchema = require("./schema.js");
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 const { reviewSchema, registerSchema } = require("./schema.js");
-const sessionSecret = process.env.SESSION_SECRET || "local-development-session-secret";
+const sessionSecret = process.env.SESSION_SECRET;
 
-if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
-    throw new Error("SESSION_SECRET must be set in production.");
+if (!sessionSecret) {
+    throw new Error("SESSION_SECRET must be set before starting the app.");
 }
 
 main().then(()=>{
