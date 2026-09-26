@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const Listing = require("../MajorProjects/models/listing.js")
+const Listing = require("./models/listing.js")
 const Review = require("./models/review.js");
 const User = require("./models/user.js");
 const path = require("path");
@@ -33,11 +33,11 @@ async function main(){
 }
 
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
+app.set("views", path.join(__dirname, "../frontend/views"));
 app.use(express.urlencoded({extended:true}));
 app.use(methodOverride("_method"));
 app.engine('ejs',ejsMate);
-app.use(express.static(path.join(__dirname,"/public")));
+app.use(express.static(path.join(__dirname, "../frontend/public")));
 
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
