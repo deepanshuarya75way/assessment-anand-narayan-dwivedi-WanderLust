@@ -1,0 +1,38 @@
+<% layout("/layouts/boilerplate") %>
+
+<main class="auth-page">
+    <section class="auth-panel">
+        <a href="/listings" class="auth-brand">
+            <i class="fa-regular fa-compass" aria-hidden="true"></i>
+            <span>WanderLust</span>
+        </a>
+        <p class="detail-eyebrow">WELCOME BACK</p>
+        <h1>Sign in</h1>
+        <p class="auth-intro">Pick up where your travel plans left off.</p>
+
+        <% if (error) { %>
+            <div class="alert alert-danger auth-error" role="alert"><%= error %></div>
+        <% } %>
+
+        <form action="/login" method="POST" class="auth-form">
+            <input type="hidden" name="returnTo" value="<%= returnTo %>">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" id="username" name="username" class="form-control" autocomplete="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-control" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn add-btn auth-submit">
+                <i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i>
+                Sign in
+            </button>
+        </form>
+
+        <p class="auth-switch">
+            New to WanderLust?
+            <a href="/register?returnTo=<%= encodeURIComponent(returnTo) %>">Create an account</a>
+        </p>
+    </section>
+</main>

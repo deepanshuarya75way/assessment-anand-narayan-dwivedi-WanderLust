@@ -1,0 +1,71 @@
+<% layout("/layouts/boilerplate") %>
+
+<main class="listings-page">
+    <header class="listing-page-header">
+        <div>
+            <p class="listing-eyebrow">WANDERLUST STAYS</p>
+            <h1>All listings</h1>
+            <p class="listing-count">
+                <%= alllistings.length %> <%= alllistings.length === 1 ? "stay" : "stays" %> to explore
+            </p>
+        </div>
+        <a href="/listings/new" class="btn add-btn listing-create-btn">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            Add a listing
+        </a>
+    </header>
+
+    <% if (alllistings.length) { %>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4 listing-grid">
+            <% for (const listing of alllistings) { %>
+                <div class="col">
+                    <article class="card listing-card h-100">
+                        <div class="listing-image-frame">
+                            <a href="/listings/<%= listing._id %>" class="listing-image-link">
+                                <img
+                                    src="<%= listing.image.url %>"
+                                    class="listing-image"
+                                    alt="<%= listing.title %>"
+                                    loading="lazy"
+                                >
+                            </a>
+                            <% const isInterested = currentUser && listing.interestedUsers.some((userId) => userId.equals(currentUser._id)); %>
+                            <% if (currentUser) { %>
+                                <form action="/listings/<%= listing._id %>/interest" method="POST" class="interest-toggle-form">
+                                    <input type="hidden" name="returnTo" value="/listings">
+                                    <button type="submit" class="interest-toggle <%= isInterested ? 'is-interested' : '' %>" aria-label="<%= isInterested ? 'Remove from interested' : 'Mark as interested' %>" aria-pressed="<%= Boolean(isInterested) %>" title="<%= isInterested ? 'Remove from interested' : 'Mark as interested' %>">
+                                        <i class="fa-<%= isInterested ? 'solid' : 'regular' %> fa-heart" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            <% } else { %>
+                                <a href="/login?returnTo=%2Flistings" class="interest-toggle" aria-label="Sign in to mark as interested" title="Sign in to mark as interested">
+                                    <i class="fa-regular fa-heart" aria-hidden="true"></i>
+                                </a>
+                            <% } %>
+                        </div>
+                        <a href="/listings/<%= listing._id %>" class="listing-link">
+                            <div class="card-body listing-card-body">
+                                <h2 class="listing-title"><%= listing.title %></h2>
+                                <p class="listing-location">
+                                    <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                                    <%= listing.location %>, <%= listing.country %>
+                                </p>
+                                <p class="listing-price">
+                                    <strong>&#8377;<%= listing.price.toLocaleString("en-IN") %></strong>
+                                    <span>/ night</span>
+                                </p>
+                            </div>
+                        </a>
+                    </article>
+                </div>
+            <% } %>
+        </div>
+    <% } else { %>
+        <section class="listing-empty-state">
+            <i class="fa-regular fa-compass" aria-hidden="true"></i>
+            <h2>No listings yet</h2>
+            <p>Add the first stay to get started.</p>
+            <a href="/listings/new" class="btn add-btn">Create a listing</a>
+        </section>
+    <% } %>
+</main>

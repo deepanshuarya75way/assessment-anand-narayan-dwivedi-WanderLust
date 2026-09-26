@@ -1,0 +1,43 @@
+<% layout("/layouts/boilerplate") %>
+
+<main class="auth-page">
+    <section class="auth-panel">
+        <a href="/listings" class="auth-brand">
+            <i class="fa-regular fa-compass" aria-hidden="true"></i>
+            <span>WanderLust</span>
+        </a>
+        <p class="detail-eyebrow">YOUR WANDERLUST ACCOUNT</p>
+        <h1>Create an account</h1>
+        <p class="auth-intro">Keep the stays you're interested in close at hand.</p>
+
+        <% if (error) { %>
+            <div class="alert alert-danger auth-error" role="alert"><%= error %></div>
+        <% } %>
+
+        <form action="/register" method="POST" class="auth-form">
+            <input type="hidden" name="returnTo" value="<%= returnTo %>">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" id="username" name="username" class="form-control" autocomplete="username" minlength="3" maxlength="30" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-control" autocomplete="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-control" autocomplete="new-password" minlength="8" required>
+                <div class="form-text">Use at least 8 characters.</div>
+            </div>
+            <button type="submit" class="btn add-btn auth-submit">
+                <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                Create account
+            </button>
+        </form>
+
+        <p class="auth-switch">
+            Already registered?
+            <a href="/login?returnTo=<%= encodeURIComponent(returnTo) %>">Sign in</a>
+        </p>
+    </section>
+</main>
