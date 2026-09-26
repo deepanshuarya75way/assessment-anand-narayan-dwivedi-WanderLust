@@ -1,0 +1,14 @@
+{
+  "name": "wanderlust",
+  "version": "1.0.0",
+  "description": "WanderLust - Vacation Rental Web Application",
+  "main": "backend/app.js",
+  "scripts": {
+    "start": "cd backend && node app.js",
+    "build": "cd backend && npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {}
+}

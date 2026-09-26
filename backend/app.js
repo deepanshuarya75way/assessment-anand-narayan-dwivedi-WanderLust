@@ -14,13 +14,13 @@ const LocalStrategy = require("passport-local");
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js")
 const listingSchema = require("./schema.js");
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-const { reviewSchema, registerSchema } = require("./schema.js");
-const sessionSecret = process.env.SESSION_SECRET;
-
-if (!sessionSecret) {
-    throw new Error("SESSION_SECRET must be set before starting the app.");
+if (process.env.NODE_ENV !== "production") {
+    try { require("dotenv").config(); } catch (e) {}
 }
+
+const MONGO_URL = process.env.ATLASDB_URL || process.env.MONGODB_URI || "mongodb+srv://ananddev:PpxXIVSYPILYgBWf@cluster0.ovdb4wk.mongodb.net/wanderlust?retryWrites=true&w=majority";
+const { reviewSchema, registerSchema } = require("./schema.js");
+const sessionSecret = process.env.SESSION_SECRET || "wanderlustsupersecretcode2026";
 
 main().then(()=>{
     console.log("connected to DB");
@@ -306,6 +306,7 @@ app.use((err, req, res, next) => {
     // res.status(statusCode).send(message);
 });
 
-app.listen(8080, ()=>{
-    console.log("server is listening to post 8080");
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+    console.log(`server is listening to port ${port}`);
 });

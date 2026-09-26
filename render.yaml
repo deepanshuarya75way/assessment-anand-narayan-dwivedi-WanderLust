@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: wanderlust
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ATLASDB_URL
+        sync: false
