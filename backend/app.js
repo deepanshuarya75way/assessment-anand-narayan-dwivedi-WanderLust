@@ -14,29 +14,34 @@ const LocalStrategy = require("passport-local");
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js")
 const listingSchema = require("./schema.js");
+const SearchLead = require("./models/searchLead.js");
+const Booking = require("./models/booking.js");
+const cron = require("node-cron");
+const { sendBookingFollowUp } = require("./utils/email.js");
+
 if (process.env.NODE_ENV !== "production") {
-    try { require("dotenv").config(); } catch (e) {}
+    try { require("dotenv").config(); } catch (e) { }
 }
 
 const MONGO_URL = process.env.ATLASDB_URL || process.env.MONGODB_URI || "mongodb+srv://ananddev:PpxXIVSYPILYgBWf@cluster0.ovdb4wk.mongodb.net/wanderlust?retryWrites=true&w=majority";
 const { reviewSchema, registerSchema } = require("./schema.js");
 const sessionSecret = process.env.SESSION_SECRET || "wanderlustsupersecretcode2026";
 
-main().then(()=>{
+main().then(() => {
     console.log("connected to DB");
 })
-.catch((err)=>{
-    console.log(err);
-});
-async function main(){
+    .catch((err) => {
+        console.log(err);
+    });
+async function main() {
     await mongoose.connect(MONGO_URL);
 }
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../frontend/views"));
-app.use(express.urlencoded({extended:true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
-app.engine('ejs',ejsMate);
+app.engine('ejs', ejsMate);
 app.use(express.static(path.join(__dirname, "../frontend/public")));
 
 passport.use(new LocalStrategy(User.authenticate()));
@@ -77,36 +82,143 @@ const requireLogin = (req, res, next) => {
     next();
 };
 
-app.get('/',(req,res)=>{
+app.get('/', (req, res) => {
     res.redirect("/listings");
 });
 
-const validateListing = (req,res,next)=>{
+const validateListing = (req, res, next) => {
     const { error } = listingSchema.validate(req.body);
 
-    if(error){
+    if (error) {
         throw new ExpressError(400, error.message);
     }
-    else{
+    else {
         next();
     }
 };
 
-const validateReview = (req,res,next)=>{
+const validateReview = (req, res, next) => {
     const { error } = reviewSchema.validate(req.body);
 
-    if(error){
+    if (error) {
         throw new ExpressError(400, error.message);
     }
-    else{
+    else {
         next();
     }
 };
 
-app.get('/listings', async (req,res)=>{
-   const alllistings = await Listing.find({});
-   res.render("listings/index.ejs",{alllistings});
+cron.schedule("*/5 * * * *", async ()=>{
+    try{
+        const oldLeads = await SearchLead.find({
+            bookingCompleted: false,
+            emailSent: false, 
+            createdAt: {
+                $lte: new Date(Date.now()- 5 * 60 * 1000)
+            }
+        }).limit(20);
+
+        for(const lead of oldLeads){
+            try{
+                await sendBookingFollowUp(lead);
+                lead.emailSent = true;
+
+                lead.emailSentAt = new Date();
+
+                await lead.save();
+
+                console.log(`Follow Up email sent to ${lead.email}`);
+            }
+            catch(emailError){
+                console.error("Email failed", error.message);
+            }
+        }
+    }catch(err){
+        console.log("Lead Follow-up error:", error.message);
+    }
 });
+
+app.get("/listings", wrapAsync(async (req, res) => {
+    const searchQuery = (req.query.search || "").trim();
+
+    let alllistings;
+
+    if (searchQuery) {
+        const regex = new RegExp(searchQuery, "i");
+
+        alllistings = await Listing.find({
+            $or: [
+                { title: regex },
+                { location: regex },
+                { country: regex },
+                { description: regex }
+            ]
+        });
+    } else {
+        alllistings = await Listing.find({});
+    }
+
+    if (searchQuery && req.user && alllistings.length > 0) {
+        for (const listing of alllistings) {
+            const existingLead = await SearchLead.findOne({
+                user: req.user._id,
+                searchQuery: searchQuery.toLowerCase(),
+                listing: listing._id,
+                bookingCompleted: false,
+                emailSent: false
+            });
+
+            if (!existingLead) {
+                await SearchLead.create({
+                    user: req.user._id,
+                    email: req.user.email,
+                    searchQuery: searchQuery.toLowerCase(),
+                    listing: listing._id,
+                    listingTitle: listing.title,
+                    listingLocation: `${listing.location},${listing.country}`,
+                    listingPrice: listing.price,
+                    listingUrl: `/listings/${listing._id}`
+
+                });
+            }
+        }
+    }
+    res.render("listings/index.ejs", {
+        alllistings, searchQuery
+    });
+}));
+
+app.post("/listings/:id/book", requireLogin, wrapAsync(async (req, res) => {
+    const { id } = req.params;
+
+    const listing = await Listing.findById(id);
+
+    if (!listing) {
+        throw new ExpressError(404, "listening not found");
+    }
+    const booking = await Booking.create({
+        user: req.user._id,
+        listing: listing._id
+    });
+
+    await SearchLead.updateMany(
+        {
+            user: req.user._id,
+            listing: listing._id,
+
+        bookingCompleted: false
+        },
+        {
+            $set: {
+                bookingCompleted: true
+            }
+        }
+    );
+res.send(`<h1> Booking Confirmed! </h1>
+        <p> Your booking for ${listing.title} is confirmed.</p> <a href = "/listings/${listing._id}"> Back to listing</a>`
+);
+})
+);
 
 app.get("/register", (req, res) => {
     res.render("users/register.ejs", {
@@ -115,7 +227,7 @@ app.get("/register", (req, res) => {
     });
 });
 
-app.get("/test",(req,res) =>{
+app.get("/test", (req, res) => {
     res.send("Server is working");
 });
 
@@ -183,15 +295,15 @@ app.post("/logout", (req, res, next) => {
 });
 
 //new route
-app.get("/listings/new",(req,res)=>{
+app.get("/listings/new", (req, res) => {
     res.render("listings/new.ejs");
 });
 
 //show route
-app.get("/listings/:id",async (req,res)=>{
-    let {id} = req.params;
+app.get("/listings/:id", async (req, res) => {
+    let { id } = req.params;
     const listing = await Listing.findById(id).populate("reviews");
-    res.render("listings/show.ejs", {listing});
+    res.render("listings/show.ejs", { listing });
 });
 
 app.post("/listings/:id/interest", requireLogin, wrapAsync(async (req, res) => {
@@ -212,8 +324,8 @@ app.post("/listings/:id/interest", requireLogin, wrapAsync(async (req, res) => {
 
 //create route
 // create route
-app.post("/listings",validateListing, wrapAsync(async (req, res,next) => {
-        const listingData = req.body.listing;
+app.post("/listings", validateListing, wrapAsync(async (req, res, next) => {
+    const listingData = req.body.listing;
 
     if (
         listingData.image &&
@@ -234,22 +346,22 @@ app.post("/listings",validateListing, wrapAsync(async (req, res,next) => {
 );
 
 //edit route
-app.get("/listings/:id/edit",async (req,res)=>{
-    let {id} = req.params;
+app.get("/listings/:id/edit", async (req, res) => {
+    let { id } = req.params;
     const listing = await Listing.findById(id);
-    res.render("listings/edit.ejs",{listing});
+    res.render("listings/edit.ejs", { listing });
 });
 
 //upadte route
-app.put("/listings/:id", async (req,res)=>{
-    let {id} = req.params;
-    await Listing.findByIdAndUpdate(id, {...req.body.listing});
+app.put("/listings/:id", async (req, res) => {
+    let { id } = req.params;
+    await Listing.findByIdAndUpdate(id, { ...req.body.listing });
     res.redirect(`/listings/${id}`);
 });
 
 //delete route
-app.delete("/listings/:id",async (req,res)=>{
-    let {id} = req.params;
+app.delete("/listings/:id", async (req, res) => {
+    let { id } = req.params;
     let deletedListing = await Listing.findByIdAndDelete(id);
     console.log(deletedListing);
     res.redirect("/listings");
@@ -258,8 +370,8 @@ app.delete("/listings/:id",async (req,res)=>{
 
 //Reviews
 //Post route for reviews
-app.post("/listings/:id/reviews", validateReview , wrapAsync(async (req,res)=>{
-    let {id} = req.params;
+app.post("/listings/:id/reviews", validateReview, wrapAsync(async (req, res) => {
+    let { id } = req.params;
     let listing = await Listing.findById(id);
     let newReview = new Review(req.body.review);
     listing.reviews.push(newReview);
@@ -306,7 +418,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
     let { statusCode = 500, message = "Something went wrong!" } = err;
 
-    res.status(statusCode).render("Error.ejs",{err});
+    res.status(statusCode).render("Error.ejs", { err });
     // res.status(statusCode).send(message);
 });
 
