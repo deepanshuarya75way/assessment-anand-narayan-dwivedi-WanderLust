@@ -19,7 +19,7 @@ const bookingSchema = new mongoose.Schema(
     listingUrl : String,
 
     bookingDate: {
-      type : Boolean,
+      type : Date,
       default: Date.now
     },
 
