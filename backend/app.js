@@ -115,6 +115,10 @@ app.get("/register", (req, res) => {
     });
 });
 
+app.get("/test",(req,res) =>{
+    res.send("Server is working");
+});
+
 app.post("/register", wrapAsync(async (req, res, next) => {
     const returnTo = safeReturnTo(req.body.returnTo);
     const { error } = registerSchema.validate(req.body);
@@ -306,7 +310,7 @@ app.use((err, req, res, next) => {
     // res.status(statusCode).send(message);
 });
 
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`server is listening to port ${port}`);
 });
