@@ -2,6 +2,15 @@
 
 <main class="listings-page">
     <header class="listing-page-header">
+        <form action="/listings" method="GET" class="mb-4">
+            <div class="input-group">
+                <input type="text" name = "search" value="<%= searchQuery || '' %> "
+                class = "form-control" placeholder="Search destination location....">
+                <button class="btn btn-dark" type="submit">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </form>
         <div>
             <p class="listing-eyebrow">WANDERLUST STAYS</p>
             <h1>All listings</h1>

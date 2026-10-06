@@ -50,6 +50,11 @@
             </section>
         </aside>
 
+        <form action="/listings/<%= listing._id %>/book" method="POST">
+            <button type="submit" class="btn btn-success"> Book Now </button>
+        </form>
+        
+
         <div class="detail-content">
             <div class="detail-image-frame">
                 <img src="<%= listing.image.url %>" class="detail-image" alt="<%= listing.title %>">
